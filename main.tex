@@ -1,0 +1,64 @@
+\documentclass[aspectratio=169]{beamer}
+
+\usepackage[english]{babel}
+\usepackage[T1]{fontenc}
+\usepackage{lmodern}
+\usepackage{amsmath}
+\usepackage{pgfpages}
+
+\DeclareMathOperator{\Enc}{Enc}
+\DeclareMathOperator{\Dec}{Dec}
+
+\setbeameroption{show notes on second screen=right}
+
+\title{Background of Fully Homomorphic Encryption}
+\subtitle{CKKS and TFHE}
+\author{HU Qi\\PhD Student in HKU}
+\institute{The University of Hong Kong}
+\date{\today}
+
+\begin{document}
+
+\begin{frame}[plain]
+  \titlepage
+\end{frame}
+
+\begin{frame}{Motivation and Definition of FHE}
+  \begin{itemize}
+    \item \textbf{Reality tension:} data must be ``used'' without ever being ``seen''.
+    \begin{itemize}
+      \item Cloud outsourcing: model inference, statistical analytics, search indexing.
+      \item Regulatory pressure: GDPR, HIPAA, and cross-border data controls.
+      \item Traditional encryption covers storage and transit, but requires decryption for computation.
+    \end{itemize}
+    \item \textbf{Privacy-computing goal:} make data usable while keeping it confidential.
+    \begin{itemize}
+      \item Servers only handle ciphertext yet complete the agreed computation.
+      \item Clients decrypt and recover the same outcome as plaintext evaluation.
+    \end{itemize}
+    \item \textbf{FHE definition:} core property $\Dec(f(\Enc(x))) = f(x)$.
+    \begin{itemize}
+      \item Meaning: homomorphic $f$ on ciphertext, decrypt for the plaintext result.
+    \end{itemize}
+    \item \textbf{Typical applications:}
+    \begin{itemize}
+      \item Healthcare: encrypted imaging or genomics analysed in the cloud, hospitals decrypt locally.
+      \item Finance: encrypted transactions scored for risk or collaborative anti-fraud.
+      \item Privacy smart contracts: on-chain ciphertexts with off-chain/on-chain FHE execution.
+    \end{itemize}
+  \end{itemize}
+  \note{Start with the question: why compute under encryption? Cloud inference, analytics, and risk scoring clash with GDPR, HIPAA, and cross-border rules that forbid revealing plaintext. Traditional encryption protects storage and transit yet forces decryption right before computation—the riskiest moment. Privacy computing keeps servers on ciphertext while clients decrypt to recover the same output; the identity $\Dec(f(\Enc(x))) = f(x)$ uses the same logical $f$, with ciphertexts processed through matching homomorphic operations. FHE keeps data encrypted end-to-end, removing the server-side decrypt-compute step and shrinking leakage on untrusted infrastructure. Applications span encrypted medical AI, financial risk scoring on ciphertexts, encrypted inputs to cloud models with local decryption, and privacy smart contracts.}
+\end{frame}
+
+\begin{frame}{Evolution of Fully Homomorphic Encryption}
+  \begin{itemize}
+    \item 2009: Gentry's breakthrough first-generation scheme based on ideal lattices.
+    \item 2011--2014: Second generation (BGV, BFV) improves efficiency via leveled FHE and bootstrapping optimizations.
+    \item 2016: CKKS introduces approximate arithmetic for real-number workloads such as machine learning inference.
+    \item 2016+: TFHE enables fast gate-by-gate Boolean computation with rapid bootstrapping.
+    \item Current landscape: hybrid approaches, GPU acceleration, and practical libraries (HElib, SEAL, Concrete, OpenFHE).
+  \end{itemize}
+  \note{Here I sketch the trajectory of FHE. After Gentry's 2009 construction, leveled schemes like BGV and BFV reduced overhead. CKKS later delivered approximate arithmetic suited for ML, while TFHE focused on fast Boolean gates with efficient bootstrapping. Today the ecosystem blends these ideas, pushing toward practical deployments with optimized libraries and hardware acceleration.}
+\end{frame}
+
+\end{document}
