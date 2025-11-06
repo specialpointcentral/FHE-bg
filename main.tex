@@ -23,7 +23,7 @@
   \titlepage
 \end{frame}
 
-\begin{frame}{Motivation and Definition of FHE}
+\begin{frame}{1.1 Motivation and Definition of FHE}
   \begin{itemize}
     \item \textbf{Reality tension:} data must be ``used'' without ever being ``seen''.
     \begin{itemize}
@@ -50,7 +50,7 @@
   \note{Start with the question: why compute under encryption? Cloud inference, analytics, and risk scoring clash with GDPR, HIPAA, and cross-border rules that forbid revealing plaintext. Traditional encryption protects storage and transit yet forces decryption right before computation—the riskiest moment. Privacy computing keeps servers on ciphertext while clients decrypt to recover the same output; the identity $\Dec(f(\Enc(x))) = f(x)$ uses the same logical $f$, with ciphertexts processed through matching homomorphic operations. FHE keeps data encrypted end-to-end, removing the server-side decrypt-compute step and shrinking leakage on untrusted infrastructure. Applications span encrypted medical AI, financial risk scoring on ciphertexts, encrypted inputs to cloud models with local decryption, and privacy smart contracts.}
 \end{frame}
 
-\begin{frame}{Evolution of Fully Homomorphic Encryption}
+\begin{frame}{1.2 Evolution of Fully Homomorphic Encryption}
   \begin{itemize}
     \item 2009: Gentry's breakthrough first-generation scheme based on ideal lattices.
     \item 2011--2014: Second generation (BGV, BFV) improves efficiency via leveled FHE and bootstrapping optimizations.
@@ -59,6 +59,59 @@
     \item Current landscape: hybrid approaches, GPU acceleration, and practical libraries (HElib, SEAL, Concrete, OpenFHE).
   \end{itemize}
   \note{Here I sketch the trajectory of FHE. After Gentry's 2009 construction, leveled schemes like BGV and BFV reduced overhead. CKKS later delivered approximate arithmetic suited for ML, while TFHE focused on fast Boolean gates with efficient bootstrapping. Today the ecosystem blends these ideas, pushing toward practical deployments with optimized libraries and hardware acceleration.}
+\end{frame}
+
+\section{Mathematical Foundations of FHE}
+
+\begin{frame}{2. Modular Arithmetic and Polynomial Rings}
+  \begin{itemize}
+    \item Modular arithmetic in $\mathbb{Z}_q$ and the polynomial ring $R_q = \mathbb{Z}_q[x]/(x^N+1)$ as the ciphertext container.
+    \item Convolution-style multiplication accelerated from $\mathcal{O}(N^2)$ to $\mathcal{O}(N \log N)$ via NTT/FFT.
+    \item SIMD-style batching intuition: ``one computation, many slots''.
+  \end{itemize}
+  \note{Introduce the three pillars: the ciphertext container $\mathbb{Z}_q$ and $R_q=\mathbb{Z}_q[x]/(x^N+1)$, fast convolution via NTT/FFT, and SIMD-style batching intuition.}
+\end{frame}
+
+\begin{frame}{2.1 $\mathbb{Z}_q$ and $R_q = \mathbb{Z}_q[x]/(x^N+1)$}
+  \begin{itemize}
+    \item Content to be added.
+  \end{itemize}
+  \note{Content to be added.}
+\end{frame}
+
+\begin{frame}{2.2 Convolution-Style Multiplication and NTT/FFT Acceleration}
+  \begin{itemize}
+    \item Content to be added.
+  \end{itemize}
+  \note{Content to be added.}
+\end{frame}
+
+\begin{frame}{2.3 Intuition for Batched (SIMD) Encoding}
+  \begin{itemize}
+    \item Content to be added.
+  \end{itemize}
+  \note{Content to be added.}
+\end{frame}
+
+\begin{frame}{3. LWE and RLWE}
+  \begin{itemize}
+    \item Content to be added.
+  \end{itemize}
+  \note{Content to be added.}
+\end{frame}
+
+\begin{frame}{3.1 LWE: $b = A s + e \pmod{q}$ Hardness}
+  \begin{itemize}
+    \item Content to be added.
+  \end{itemize}
+  \note{Content to be added.}
+\end{frame}
+
+\begin{frame}{3.2 RLWE: $b(x) = a(x) s(x) + e(x)$}
+  \begin{itemize}
+    \item Content to be added.
+  \end{itemize}
+  \note{Content to be added.}
 \end{frame}
 
 \end{document}
