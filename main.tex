@@ -102,9 +102,13 @@
 
 \begin{frame}{2.3 LWE and RLWE}
   \begin{itemize}
-    \item Content to be added.
+    \item Motivation: Learning With Errors (LWE) and Ring-LWE (RLWE) provide computationally controllable, provably secure public-key and homomorphic encryption foundations.
+    \item Core idea: add random noise to hide plaintexts while preserving ring/polynomial structure for computation, reducing security to GapSVP (quantum-resistant).
+    \item LWE (vector form): samples $(A, b = A s + e \bmod q)$ where $A$ is random, $s$ secret, $e$ small noise.
+    \item RLWE (polynomial form): samples $(a(x), b(x) = a(x) s(x) + e(x) \bmod q)$ over $R_q$.
+    \item Transition: RLWE inherits LWE hardness while enabling structured polynomials that FHE schemes rely on.
   \end{itemize}
-  \note{Content to be added.}
+  \note{Introduce why we need LWE/RLWE: they add controlled random noise to hide plaintexts while preserving the ring/polynomial structure needed for computation, with security reducible to GapSVP even against quantum adversaries. Briefly define LWE via noisy linear equations $b = As + e \pmod{q}$ and RLWE via polynomial samples $b(x) = a(x)s(x)+e(x) \pmod{q}$ inside $R_q$. Emphasize that RLWE inherits LWE hardness yet aligns with the polynomial ring container used in FHE, enabling efficient and analyzable homomorphic schemes.}
 \end{frame}
 
 \begin{frame}{2.4 LWE: $b = A s + e \pmod{q}$ Hardness}
