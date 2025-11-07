@@ -5,9 +5,14 @@
 \usepackage{lmodern}
 \usepackage{amsmath}
 \usepackage{pgfpages}
+\usepackage{tikz}
+\usetikzlibrary{arrows.meta,calc,decorations.pathmorphing}
 
 \DeclareMathOperator{\Enc}{Enc}
 \DeclareMathOperator{\Dec}{Dec}
+\newcommand{\plaintext}[1]{\textcolor{orange!80!yellow}{#1}}
+\newcommand{\ciphertext}[1]{\textcolor{teal!75!black}{#1}}
+\newcommand{\seckey}[1]{\textcolor{violet!60!white}{#1}}
 
 \setbeameroption{show notes on second screen=right}
 
@@ -111,18 +116,54 @@
   \note{Introduce why we need LWE/RLWE: they add controlled random noise to hide plaintexts while preserving the ring/polynomial structure needed for computation, with security reducible to GapSVP even against quantum adversaries. Briefly define LWE via noisy linear equations $b = As + e \pmod{q}$ and RLWE via polynomial samples $b(x) = a(x)s(x)+e(x) \pmod{q}$ inside $R_q$. Emphasize that RLWE inherits LWE hardness yet aligns with the polynomial ring container used in FHE, enabling efficient and analyzable homomorphic schemes.}
 \end{frame}
 
-\begin{frame}{2.4 LWE: $b = A s + e \pmod{q}$ Hardness}
-  \begin{itemize}
-    \item Content to be added.
-  \end{itemize}
-  \note{Content to be added.}
+\begin{frame}{2.4 LWE: Key Generation, Encryption, Decryption}
+  \begin{description}
+    \item[Key generation] Sample $\seckey{s} \leftarrow \mathbb{Z}_q^n$, noise $e \leftarrow \mathbb{Z}_q^n$, and public randomness $A \leftarrow \mathbb{Z}_q^{n \times n}$. Set
+    $$
+      b = A \seckey{s} + e \pmod{q}.
+    $$
+    Publish $(A, b)$; keep $\seckey{s}$ secret.
+    \item[Encryption of $\plaintext{m} \in \{0,1\}$] Pick a small random vector $r$, then compute
+    \[
+      c_1 = A^\top r,\qquad
+      c_2 = b^\top r + \Delta \plaintext{m},
+    \]
+    forming ciphertext $\boxed{c = (c_1, c_2)}$,
+    where the scaling constant is $\Delta = q/2$ for a binary alphabet (or $q/L$ for $L$ equally spaced levels). As a quick sanity check, let $r = \mathbf{1}$ so $c_1$ simply sums the columns of $A$.
+    \item[Decryption with $\seckey{s}$] Evaluate
+    \[
+      c_2 - c_1^\top \seckey{s} = e^\top r + \Delta \plaintext{m}.
+    \]
+    Because $e^\top r$ is tiny, we recover the message by normalizing and rounding:
+    $$
+      \widehat{m} = \operatorname{round}\!\left(\frac{c_2 - c_1^\top \seckey{s}}{\Delta}\right),
+    $$
+    which snaps back to the original $\plaintext{m}$.
+  \end{description}
+  \note{“Here is the full LWE workflow. First sample the bright-violet secret key $\seckey{s}$ along with noise $e$ and public matrix $A$, then publish the vector $b = A\seckey{s} + e \bmod q$ as part of the public key. The bright-orange $\plaintext{m}$ is the plaintext bit we encrypt. Pick a short random vector $r$—in the simplest thought experiment let $r = \mathbf{1}$ so $c_1 = A^\top r$ just sums the columns—and compute $c_1$ plus $c_2 = b^\top r + \Delta \plaintext{m}$ where $\Delta = q/2$ because the message alphabet has two symbols (if there were $L$ symbols we’d set $\Delta = q/L$). Decryption is $c_2 - c_1^\top \seckey{s}$: the cross terms cancel, leaving $e^\top r + \Delta \plaintext{m}$. Since the error is tiny, divide by $\Delta$ and round to recover $\plaintext{m}$. This emphasizes how the noisy value sits near a multiple of $\Delta$ and snaps back to the intended plaintext.”}
 \end{frame}
 
-\begin{frame}{2.5 RLWE: $b(x) = a(x) s(x) + e(x)$}
-  \begin{itemize}
-    \item Content to be added.
-  \end{itemize}
-  \note{Content to be added.}
+\begin{frame}{2.5 RLWE: $b(x) = a(x)s(x) + e(x) \pmod{q}$}
+  \begin{description}
+    \item[Ring setting] Work in $R_q = \mathbb{Z}_q[x]/(x^N+1)$ with secret $\seckey{s(x)}$ and small error $e(x)$ drawn from a narrow distribution on $R_q$.
+    \item[Key generation] Sample public $a(x) \leftarrow R_q$, draw $e(x)$, and set
+    \[
+      b(x) = a(x)\seckey{s(x)} + e(x) \pmod{q}.
+    \]
+    Publish $(a(x), b(x))$, keep $\seckey{s(x)}$ secret.
+    \item[Encryption of plaintext $\plaintext{m(x)} \in R_q$] Pick a small, sparse $r(x)$ (conceptually set $r(x)=1$ to sanity-check the formulas) and output
+    \[
+      c_1(x) = a(x) r(x), \qquad
+      c_2(x) = b(x) r(x) + \Delta \, \plaintext{m(x)},
+    \]
+    with $\Delta = q/t$ for $t$ plaintext slots (e.g., $t=2$ for binary messages), then package $\boxed{c(x) = (c_1(x), c_2(x))}$.
+    \item[Decryption] Compute
+    \[
+      c_2(x) - c_1(x) \seckey{s(x)} = \Delta \, \plaintext{m(x)} + \widetilde{e}(x),
+    \]
+    divide by $\Delta$, and round coefficient-wise to strip the small noise.
+  \end{description}
+  \note{“RLWE lifts everything into the polynomial ring $R_q = \mathbb{Z}_q[x]/(x^N+1)$. The bright-violet $\seckey{s(x)}$ is now a polynomial secret with small coefficients; noise polynomials come from discrete Gaussian or bounded distributions on the ring. Key generation samples a public $a(x)$, draws $e(x)$, and publishes $b(x) = a(x)\seckey{s(x)} + e(x) \bmod q$. To encrypt a bright-orange $\plaintext{m(x)}$ we pick a fresh small $r(x)$—even imagining $r(x)=1$ for intuition—and set $c_1 = a r$ and $c_2 = b r + \Delta \plaintext{m(x)}$ with $\Delta = q/t$ depending on how many plaintext slots we encode. Decryption subtracts $c_1 \seckey{s(x)}$ from $c_2$: the $a \seckey{s}$ terms cancel, leaving $\Delta \plaintext{m(x)}$ plus tiny noise. Dividing by $\Delta$ and rounding coefficient-wise recovers $\plaintext{m(x)}$.}
 \end{frame}
 
 \end{document}
