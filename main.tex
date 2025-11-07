@@ -63,51 +63,58 @@
 
 \section{Mathematical Foundations of FHE}
 
-\begin{frame}{2. Modular Arithmetic and Polynomial Rings}
+\begin{frame}{2. Mathematical Foundations Overview}
   \begin{itemize}
-    \item Modular arithmetic in $\mathbb{Z}_q$ and the polynomial ring $R_q = \mathbb{Z}_q[x]/(x^N+1)$ as the ciphertext container.
-    \item Convolution-style multiplication accelerated from $\mathcal{O}(N^2)$ to $\mathcal{O}(N \log N)$ via NTT/FFT.
-    \item SIMD-style batching intuition: ``one computation, many slots''.
+    \item Modular arithmetic and polynomial rings ($\mathbb{Z}_q$, $R_q$) as the container for ciphertext addition/multiplication.
+    \item Batched (SIMD) encoding intuition: one encrypted polynomial carries many data slots.
+    \item Hardness assumptions from LWE/RLWE tying noisy linear equations to ring-based constructions.
   \end{itemize}
-  \note{Introduce the three pillars: the ciphertext container $\mathbb{Z}_q$ and $R_q=\mathbb{Z}_q[x]/(x^N+1)$, fast convolution via NTT/FFT, and SIMD-style batching intuition.}
+  \note{Preview the three ingredients: the modular polynomial ring container, SIMD-style batching intuition, and the LWE/RLWE hardness assumptions that secure schemes.}
 \end{frame}
 
-\begin{frame}{2.1 $\mathbb{Z}_q$ and $R_q = \mathbb{Z}_q[x]/(x^N+1)$}
+\begin{frame}{2.1 Modular Arithmetic and Polynomial Rings}
+  \begin{itemize}
+    \item Modern FHE schemes encode ciphertexts as polynomials over rings to support both addition and multiplication (ring = additive group + multiplicative semigroup).
+    \item Integer modular ring: $\mathbb{Z}_q = \{0,1,\dots,q-1\}$ with addition/multiplication taken mod $q$ (typically a large prime or an RNS prime chain).
+    \item Polynomial ring: $R_q = \mathbb{Z}_q[x]/(x^N+1)$ with $N$ usually a power of two.
+    \begin{itemize}
+      \item Elements are polynomials of degree $< N$ with coefficients in $\mathbb{Z}_q$.
+      \item Multiplication: convolve coefficients, then reduce by $(x^N+1)$ so $x^N \equiv -1$.
+    \end{itemize}
+  \end{itemize}
+  \note{Explain that FHE ciphertexts need a structure supporting both addition and multiplication, so most schemes work in polynomial rings over modular integers. First define $\mathbb{Z}_q$ with mod-$q$ arithmetic (often using large primes or RNS chains). Then show how $R_q = \mathbb{Z}_q[x]/(x^N+1)$ (with $N$ as a power of two) contains polynomials of degree less than $N$, and multiplication is implemented via convolution followed by reduction modulo $x^N+1$, effectively forcing $x^N$ to behave like $-1$.}
+\end{frame}
+
+\begin{frame}{2.2 Intuition for Batched (SIMD) Encoding}
+  \begin{itemize}
+    \item Goal: start from a complex vector\\
+      $$z = (z_1, z_2, \dots, z_{N/2}) \in \mathbb{C}^{N/2},$$
+      encode it into the CKKS ring $R_q = \mathbb{Z}_q[x]/(x^N+1)$.
+    \item Observation: when $N$ is a power of two, there is an approximate isomorphism\\
+      $$R_q \otimes \mathbb{C} \cong \mathbb{C}^{N/2},$$
+      so one ciphertext carries $N/2$ complex slots.
+    \item Practical encoding: run the complex-domain inverse DFT (discrete Fourier transform) to map slots into polynomial coefficients\\
+      $$m(x) = \mathrm{Inverse\text{-}DFT}(z),$$
+      then scale and round to obtain an integer polynomial $\tilde{m}(x)$ before reducing modulo $q$, so $\tilde{m}(x) \bmod q \in \mathbb{Z}_q[x]$.
+  \end{itemize}
+  \note{Explain that batching in CKKS means taking a complex vector $z$ and embedding it into the polynomial ring. The key fact is the approximate isomorphism $R_q \otimes \mathbb{C} \cong \mathbb{C}^{N/2}$ when $N$ is a power of two; hence each ciphertext holds $N/2$ complex slots. Practically we run an inverse DFT on $z$ in the complex domain to produce $m(x)$, then scale and round to an integer polynomial $\tilde{m}(x)$ and reduce modulo $q$ so it lives in $\mathbb{Z}_q[x]$ before encryption.}
+\end{frame}
+
+\begin{frame}{2.3 LWE and RLWE}
   \begin{itemize}
     \item Content to be added.
   \end{itemize}
   \note{Content to be added.}
 \end{frame}
 
-\begin{frame}{2.2 Convolution-Style Multiplication and NTT/FFT Acceleration}
+\begin{frame}{2.4 LWE: $b = A s + e \pmod{q}$ Hardness}
   \begin{itemize}
     \item Content to be added.
   \end{itemize}
   \note{Content to be added.}
 \end{frame}
 
-\begin{frame}{2.3 Intuition for Batched (SIMD) Encoding}
-  \begin{itemize}
-    \item Content to be added.
-  \end{itemize}
-  \note{Content to be added.}
-\end{frame}
-
-\begin{frame}{3. LWE and RLWE}
-  \begin{itemize}
-    \item Content to be added.
-  \end{itemize}
-  \note{Content to be added.}
-\end{frame}
-
-\begin{frame}{3.1 LWE: $b = A s + e \pmod{q}$ Hardness}
-  \begin{itemize}
-    \item Content to be added.
-  \end{itemize}
-  \note{Content to be added.}
-\end{frame}
-
-\begin{frame}{3.2 RLWE: $b(x) = a(x) s(x) + e(x)$}
+\begin{frame}{2.5 RLWE: $b(x) = a(x) s(x) + e(x)$}
   \begin{itemize}
     \item Content to be added.
   \end{itemize}
