@@ -166,4 +166,93 @@
   \note{“RLWE lifts everything into the polynomial ring $R_q = \mathbb{Z}_q[x]/(x^N+1)$. The bright-violet $\seckey{s(x)}$ is now a polynomial secret with small coefficients; noise polynomials come from discrete Gaussian or bounded distributions on the ring. Key generation samples a public $a(x)$, draws $e(x)$, and publishes $b(x) = a(x)\seckey{s(x)} + e(x) \bmod q$. To encrypt a bright-orange $\plaintext{m(x)}$ we pick a fresh small $r(x)$—even imagining $r(x)=1$ for intuition—and set $c_1 = a r$ and $c_2 = b r + \Delta \plaintext{m(x)}$ with $\Delta = q/t$ depending on how many plaintext slots we encode. Decryption subtracts $c_1 \seckey{s(x)}$ from $c_2$: the $a \seckey{s}$ terms cancel, leaving $\Delta \plaintext{m(x)}$ plus tiny noise. Dividing by $\Delta$ and rounding coefficient-wise recovers $\plaintext{m(x)}$.}
 \end{frame}
 
+\section{CKKS}
+
+\begin{frame}{3. CKKS Overview}
+  \begin{itemize}
+    \item Approximate-number FHE supporting packed real/complex vectors (SIMD-style).
+    \item Workflow: scale plaintexts by a large $\Delta$, encode integers into RLWE polynomials, then encrypt.
+    \item Homomorphic addition is cheap (same scale); multiplication requires relinearization + rescale to control growth.
+    \item Resulting ciphertexts keep bounded precision error, making CKKS practical for ML inference and analytics.
+  \end{itemize}
+  \note{“This section introduces CKKS, currently the most widely deployed homomorphic encryption scheme for real and complex vectors. It lets us perform additions and multiplications directly on encrypted data while keeping the final precision error under control. The core trick is to multiply real numbers by a large scaling factor $\Delta$, convert them to integers, and encode those integers into RLWE polynomials before encrypting. Additions preserve the scale so they are almost free. Multiplications, however, inflate the scale and ciphertext size, so we fix things with two steps: relinearization to bring the ciphertext back to its normal dimension, and rescaling to divide away the oversized scale so precision does not keep degrading.”}
+\end{frame}
+
+\begin{frame}{3.1 CKKS Encoding and Scaling}
+  \begin{description}
+    \item[Goal] Map real/complex values into the integer polynomial ring so CKKS can process them homomorphically.
+    \item[Scaling] Multiply each real by a large $\Delta$ so fractional parts become big integers:
+    $$
+      \widetilde{m} = \Delta \cdot m,
+    $$
+    because all CKKS arithmetic happens modulo $q$.
+    \item[Encoding] (Same SIMD trick as Section 2.2) leverage $R_q \otimes \mathbb{C} \cong \mathbb{C}^{N/2}$ to pack the scaled vector into one polynomial—each slot stores one entry, enabling parallel processing.
+    \item[Decoding] After decryption, recover the integer vector and reverse the scaling:
+    $$
+      m \approx \frac{1}{\Delta} \cdot \widetilde{m},
+    $$
+    yielding the original reals up to a controllable approximation error.
+  \end{description}
+  \note{“To let CKKS encrypt and compute on reals we first have to move them into the integer polynomial ring. Two steps make this work: scaling and encoding. We multiply each real number by a large $\Delta$, turning fractional values into big integers, because all homomorphic operations happen modulo $q$ and floats are not allowed. Then we rely on the ring decomposition $R_q \otimes \mathbb{C} \cong \mathbb{C}^{N/2}$ to map an entire vector into a single polynomial—each coefficient, or slot, holds one value, exactly like the SIMD batching we introduced earlier. This is why one CKKS ciphertext can process many numbers in parallel. During decryption we reverse the process: convert the polynomial back to its integer vector and divide by $\Delta$ to get an approximation of the original reals. Hence CKKS is an approximate FHE scheme with controllable precision error.”}
+\end{frame}
+
+\begin{frame}{3.2 CKKS Encryption and Decryption}
+  \begin{itemize}
+    \item Placeholder for key generation (RLWE-style) and ciphertext formation with noise terms.
+    \item Highlight that decryption removes the RLWE masking and returns the scaled plaintext polynomial.
+  \end{itemize}
+  \note{Will add explicit formulas for $(a(x), b(x))$, the ciphertext pair $(c_1, c_2)$, and the $\Dec$ procedure in a later pass.}
+\end{frame}
+
+\begin{frame}{3.3 CKKS Homomorphic Addition}
+  \begin{itemize}
+    \item Ciphertext addition adds slots component-wise; scale and level remain unchanged.
+    \item Noise grows linearly, making addition the cheapest homomorphic primitive in CKKS.
+  \end{itemize}
+  \note{Future update: include slot diagrams and noise bounds showing $c^{(3)} = c^{(1)} + c^{(2)}$.}
+\end{frame}
+
+\begin{frame}{3.4 CKKS Homomorphic Multiplication and Relinearization}
+  \begin{itemize}
+    \item Multiplication increases ciphertext degree and doubles the scale, requiring relinearization keys.
+    \item Relinearization shrinks the ciphertext back to two components while keeping correctness.
+  \end{itemize}
+  \note{Later content will present the tensor-product view of ciphertexts and how evaluation keys map them back to dimension two.}
+\end{frame}
+
+\begin{frame}{3.5 CKKS Rescaling and Scale Management}
+  \begin{itemize}
+    \item Rescale divides the ciphertext by its current scale (and modulus) to keep values within range.
+    \item Level consumption trades modulus for precision, guiding circuit depth planning.
+  \end{itemize}
+  \note{Upcoming material: equations for $\mathrm{Rescale}(c) = \lfloor c / \Delta \rfloor$, discussions on modulus chains, and examples of managing scale across layers.}
+\end{frame}
+
+\section{TFHE}
+
+\begin{frame}{4. TFHE Overview}
+  \begin{itemize}
+    \item Boolean-focused FHE with fast gate bootstrapping using TLWE/TGSW ciphertexts.
+    \item Provides programmable look-up tables so each bootstrapping step can evaluate any Boolean function.
+    \item Ideal for encrypted logic, control, and exact comparisons where CKKS-style approximation is unsuitable.
+  \end{itemize}
+  \note{Set up the TFHE section by highlighting its Boolean niche, per-gate bootstrapping, and programmable flexibility.}
+\end{frame}
+
+\begin{frame}{4.1 TFHE Gate Operations}
+  \begin{itemize}
+    \item Placeholder bullets for NAND/AND/XOR gates realized via bootstrapping LUTs.
+    \item Mention latency of single-gate bootstrapping versus massively parallel evaluation.
+  \end{itemize}
+  \note{To be filled with diagrams of TLWE ciphertexts, phase extraction, and gate evaluation flows.}
+\end{frame}
+
+\begin{frame}{4.2 TFHE Programmable Bootstrapping (PBS)}
+  \begin{itemize}
+    \item Outline how PBS refreshes noise while applying an arbitrary function encoded as a lookup table.
+    \item Note typical use cases: non-linear activations, comparison operators, and logic gates.
+  \end{itemize}
+  \note{Will later include step-by-step PBS equations, bootstrapping key structure, and runtime considerations.}
+\end{frame}
+
 \end{document}
