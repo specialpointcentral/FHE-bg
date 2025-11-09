@@ -283,20 +283,33 @@
 \section{TFHE}
 
 \begin{frame}{4. TFHE Overview}
-  \begin{itemize}
-    \item Boolean-focused FHE with fast gate bootstrapping using TLWE/TGSW ciphertexts.
-    \item Provides programmable look-up tables so each bootstrapping step can evaluate any Boolean function.
-    \item Ideal for encrypted logic, control, and exact comparisons where CKKS-style approximation is unsuitable.
-  \end{itemize}
-  \note{Set up the TFHE section by highlighting its Boolean niche, per-gate bootstrapping, and programmable flexibility.}
+  \begin{description}
+    \item[Computation model] TFHE operates on encrypted bits; each Boolean value is packed into a (T)LWE sample, unlike CKKS’s approximate real vectors.
+    \item[Encryption layer] LWE-style keys/encapsulation; with $r = \mathbf{1}$ and $m \in \{0,1\}$:
+    $$c = (c_0, c_1) = \bigl(A,\, A\seckey{s} + \mu \plaintext{m} + e\bigr),$$
+    where $\mu$ (typically $q/2$) plays the role of the LWE scaling factor $\Delta$.
+    \item[Logic gates] Supports homomorphic AND/XOR/NOT primitives, making it ideal for comparisons, branching, verification, and encrypted control flow.
+    \item[Bootstrapping] Every gate invocation bootstraps away noise, allowing arbitrarily deep Boolean circuits with stable precision.
+    \item[Contrast to CKKS] CKKS excels at numeric workloads but struggles with exact branching or comparisons; TFHE provides the complementary bit-level toolkit.
+  \end{description}
+  \note{“Now we pivot to TFHE, which follows a completely different computation model from CKKS. CKKS encrypts approximate real vectors, whereas TFHE encrypts individual bits—each one is a TLWE/LWE sample. The scheme’s core idea is to evaluate Boolean gates such as AND, XOR, and NOT directly on ciphertexts, making it the go-to option for comparisons, conditional checks, verification protocols, and encrypted code execution. CKKS is ill-suited for these bit-level tasks. TFHE reuses the LWE-style key generation and encryption workflow; for intuition we can set $r = \mathbf{1}$ so the ciphertext looks like $(c_0, c_1) = (A, A \seckey{s} + \mu m + e)$ just like in Section 2.4, with $m \in \{0,1\}$ and $\mu$ playing the role of the earlier scaling factor $\Delta$. The killer feature is bootstrapping: every gate refreshes the noise budget, so we can evaluate arbitrarily deep logic circuits without the noise blow-up that plagues other schemes. While CKKS also has bootstrapping variants, their noise-refresh performance lags far behind TFHE’s per-gate bootstrap. This bit-level capability fills the gap left by CKKS’s numeric focus.”}
 \end{frame}
 
 \begin{frame}{4.1 TFHE Gate Operations}
-  \begin{itemize}
-    \item Placeholder bullets for NAND/AND/XOR gates realized via bootstrapping LUTs.
-    \item Mention latency of single-gate bootstrapping versus massively parallel evaluation.
-  \end{itemize}
-  \note{To be filled with diagrams of TLWE ciphertexts, phase extraction, and gate evaluation flows.}
+  \begin{description}
+    \item[Ciphertext form] Encrypt each bit $m \in \{0,1\}$ as $c = (A, c_1)$ with $c_1 = A\seckey{s} + \mu m + e$.
+    \item[NOT gate] Flip the phase to encode $1 - m$ using $(1 - m)\mu = \mu - m\mu$:
+    $$\text{NOT}(C) = \bigl(\mathbf{a},\; \mu - c_0\bigr) \bmod q,$$
+    with $\mu$ serving as the same scaling constant used earlier.
+    \item[XOR gate] Homomorphic addition implements XOR:
+    $$\text{XOR}(C_0, C_1) = C_0 + C_1 \pmod{q}.$$
+    \item[AND challenge] Multiplicative gates inflate scale/noise since
+    $$
+      (m_0 \mu)(m_1 \mu) = (m_0 m_1) \mu^2,
+    $$
+    so TFHE uses bootstrapping to refresh ciphertexts after AND/NAND.
+  \end{description}
+  \note{“This slide shows how TFHE handles Boolean gates. Each encrypted bit is an LWE-style pair $(\mathbf{a}, c_0)$ with $c_0 = \langle \mathbf{a}, s\rangle + \mu m + e$. NOT is trivial: since $(1 - m)\mu = \mu - m\mu$, we can flip the phase so $\text{NOT}(C) = (\mathbf{a}, \mu - c_0) \bmod q$. XOR is performed by ciphertext addition: $\text{XOR}(C_0, C_1) = C_0 + C_1 \pmod{q}$. The difficult gates are AND or NAND because multiplying the encoded messages triggers $(m_0 \mu)(m_1 \mu) = (m_0 m_1)\mu^2$, squaring the scale and rapidly blowing up noise. TFHE addresses this by bootstrapping immediately after such gates, which keeps the noise budget fresh and enables deep Boolean circuits.”}
 \end{frame}
 
 \begin{frame}{4.2 TFHE Programmable Bootstrapping (PBS)}
