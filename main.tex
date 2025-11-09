@@ -125,22 +125,22 @@
     Publish $(A, b)$; keep $\seckey{s}$ secret.
     \item[Encryption of $\plaintext{m} \in \{0,1\}$] Pick a small random vector $r$, then compute
     \[
-      c_1 = A^\top r,\qquad
-      c_2 = b^\top r + \Delta \plaintext{m},
+      c_0 = A^\top r,\qquad
+      c_1 = b^\top r + \Delta \plaintext{m},
     \]
-    forming ciphertext $\boxed{c = (c_1, c_2)}$,
-    where the scaling constant is $\Delta = q/2$ for a binary alphabet (or $q/L$ for $L$ equally spaced levels). As a quick sanity check, let $r = \mathbf{1}$ so $c_1$ simply sums the columns of $A$.
+    forming ciphertext $\boxed{c = (c_0, c_1)}$,
+    where the scaling constant is $\Delta = q/2$ for a binary alphabet (or $q/L$ for $L$ equally spaced levels). As a quick sanity check, let $r = \mathbf{1}$ so $c_0$ simply sums the columns of $A$.
     \item[Decryption with $\seckey{s}$] Evaluate
     \[
-      c_2 - c_1^\top \seckey{s} = e^\top r + \Delta \plaintext{m}.
+      c_1 - c_0^\top \seckey{s} = e^\top r + \Delta \plaintext{m}.
     \]
     Because $e^\top r$ is tiny, we recover the message by normalizing and rounding:
     $$
-      \widehat{m} = \operatorname{round}\!\left(\frac{c_2 - c_1^\top \seckey{s}}{\Delta}\right),
+      \widehat{m} = \operatorname{round}\!\left(\frac{c_1 - c_0^\top \seckey{s}}{\Delta}\right),
     $$
     which snaps back to the original $\plaintext{m}$.
   \end{description}
-  \note{“Here is the full LWE workflow. First sample the bright-violet secret key $\seckey{s}$ along with noise $e$ and public matrix $A$, then publish the vector $b = A\seckey{s} + e \bmod q$ as part of the public key. The bright-orange $\plaintext{m}$ is the plaintext bit we encrypt. Pick a short random vector $r$—in the simplest thought experiment let $r = \mathbf{1}$ so $c_1 = A^\top r$ just sums the columns—and compute $c_1$ plus $c_2 = b^\top r + \Delta \plaintext{m}$ where $\Delta = q/2$ because the message alphabet has two symbols (if there were $L$ symbols we’d set $\Delta = q/L$). Decryption is $c_2 - c_1^\top \seckey{s}$: the cross terms cancel, leaving $e^\top r + \Delta \plaintext{m}$. Since the error is tiny, divide by $\Delta$ and round to recover $\plaintext{m}$. This emphasizes how the noisy value sits near a multiple of $\Delta$ and snaps back to the intended plaintext.”}
+  \note{“Here is the full LWE workflow. First sample the bright-violet secret key $\seckey{s}$ along with noise $e$ and public matrix $A$, then publish the vector $b = A\seckey{s} + e \bmod q$ as part of the public key. The bright-orange $\plaintext{m}$ is the plaintext bit we encrypt. Pick a short random vector $r$—in the simplest thought experiment let $r = \mathbf{1}$ so $c_0 = A^\top r$ just sums the columns—and compute $c_0$ plus $c_1 = b^\top r + \Delta \plaintext{m}$ where $\Delta = q/2$ because the message alphabet has two symbols (if there were $L$ symbols we’d set $\Delta = q/L$). Decryption is $c_1 - c_0^\top \seckey{s}$: the cross terms cancel, leaving $e^\top r + \Delta \plaintext{m}$. Since the error is tiny, divide by $\Delta$ and round to recover $\plaintext{m}$. This emphasizes how the noisy value sits near a multiple of $\Delta$ and snaps back to the intended plaintext.”}
 \end{frame}
 
 \begin{frame}{2.5 RLWE: $b(x) = a(x)s(x) + e(x) \pmod{q}$}
@@ -153,17 +153,17 @@
     Publish $(a(x), b(x))$, keep $\seckey{s(x)}$ secret.
     \item[Encryption of plaintext $\plaintext{m(x)} \in R_q$] Pick a small, sparse $r(x)$ (conceptually set $r(x)=1$ to sanity-check the formulas) and output
     \[
-      c_1(x) = a(x) r(x), \qquad
-      c_2(x) = b(x) r(x) + \Delta \, \plaintext{m(x)},
+      c_0(x) = a(x) r(x), \qquad
+      c_1(x) = b(x) r(x) + \Delta \, \plaintext{m(x)},
     \]
-    with $\Delta = q/t$ for $t$ plaintext slots (e.g., $t=2$ for binary messages), then package $\boxed{c(x) = (c_1(x), c_2(x))}$.
+    with $\Delta = q/t$ for $t$ plaintext slots (e.g., $t=2$ for binary messages), then package $\boxed{c(x) = (c_0(x), c_1(x))}$.
     \item[Decryption] Compute
     \[
-      c_2(x) - c_1(x) \seckey{s(x)} = \Delta \, \plaintext{m(x)} + \widetilde{e}(x),
+      c_1(x) - c_0(x) \seckey{s(x)} = \Delta \, \plaintext{m(x)} + \widetilde{e}(x),
     \]
     divide by $\Delta$, and round coefficient-wise to strip the small noise.
   \end{description}
-  \note{“RLWE lifts everything into the polynomial ring $R_q = \mathbb{Z}_q[x]/(x^N+1)$. The bright-violet $\seckey{s(x)}$ is now a polynomial secret with small coefficients; noise polynomials come from discrete Gaussian or bounded distributions on the ring. Key generation samples a public $a(x)$, draws $e(x)$, and publishes $b(x) = a(x)\seckey{s(x)} + e(x) \bmod q$. To encrypt a bright-orange $\plaintext{m(x)}$ we pick a fresh small $r(x)$—even imagining $r(x)=1$ for intuition—and set $c_1 = a r$ and $c_2 = b r + \Delta \plaintext{m(x)}$ with $\Delta = q/t$ depending on how many plaintext slots we encode. Decryption subtracts $c_1 \seckey{s(x)}$ from $c_2$: the $a \seckey{s}$ terms cancel, leaving $\Delta \plaintext{m(x)}$ plus tiny noise. Dividing by $\Delta$ and rounding coefficient-wise recovers $\plaintext{m(x)}$.}
+  \note{“RLWE lifts everything into the polynomial ring $R_q = \mathbb{Z}_q[x]/(x^N+1)$. The bright-violet $\seckey{s(x)}$ is now a polynomial secret with small coefficients; noise polynomials come from discrete Gaussian or bounded distributions on the ring. Key generation samples a public $a(x)$, draws $e(x)$, and publishes $b(x) = a(x)\seckey{s(x)} + e(x) \bmod q$. To encrypt a bright-orange $\plaintext{m(x)}$ we pick a fresh small $r(x)$—even imagining $r(x)=1$ for intuition—and set $c_0 = a r$ and $c_1 = b r + \Delta \plaintext{m(x)}$ with $\Delta = q/t$ depending on how many plaintext slots we encode. Decryption subtracts $c_0 \seckey{s(x)}$ from $c_1$: the $a \seckey{s}$ terms cancel, leaving $\Delta \plaintext{m(x)}$ plus tiny noise. Dividing by $\Delta$ and rounding coefficient-wise recovers $\plaintext{m(x)}$.}
 \end{frame}
 
 \section{CKKS}
@@ -180,7 +180,7 @@
 
 \begin{frame}{3.1 CKKS Encoding and Scaling}
   \begin{description}
-    \item[Goal] Map real/complex values into the integer polynomial ring so CKKS can process them homomorphically.
+    \item[Goal] Encode a real vector $(z_1, z_2, \dots, z_k)$ into the polynomial ring $R_q = \mathbb{Z}_q[x]/(x^N + 1)$ so CKKS can process it homomorphically.
     \item[Scaling] Multiply each real by a large $\Delta$ so fractional parts become big integers:
     $$
       \widetilde{m} = \Delta \cdot m,
@@ -197,35 +197,87 @@
 \end{frame}
 
 \begin{frame}{3.2 CKKS Encryption and Decryption}
-  \begin{itemize}
-    \item Placeholder for key generation (RLWE-style) and ciphertext formation with noise terms.
-    \item Highlight that decryption removes the RLWE masking and returns the scaled plaintext polynomial.
-  \end{itemize}
-  \note{Will add explicit formulas for $(a(x), b(x))$, the ciphertext pair $(c_1, c_2)$, and the $\Dec$ procedure in a later pass.}
+  \begin{description}
+    \item[Plaintext prep] Before encryption, scale by $\Delta$ and encode the real vector into an integer polynomial $\plaintext{m(x)}$ (Section~2.2 + 3.1).
+    \item[Key generation] Identical to RLWE (Section~2.5): pick small $\seckey{s(x)}$, sample random $a(x)$ and noise $e(x)$, then publish
+    $$
+      b(x) = a(x) \seckey{s(x)} + e(x) \pmod{q}.
+    $$
+    \item[Encryption] Form ciphertext $c(x) = \bigl(c_0(x), c_1(x)\bigr)$ via
+    \[
+      c_0(x) = a(x) r(x), \qquad
+      c_1(x) = b(x) r(x) + \Delta \, \plaintext{m(x)},
+    \]
+    where $r(x)$ is a fresh small polynomial.
+    \item[Decryption] Subtract and divide by the recorded scale:
+    \[
+      c_1(x) - c_0(x)\seckey{s(x)} = \Delta \, \plaintext{m(x)} + \widetilde{e}(x)
+    \]
+    and compute $m(x) \approx \frac{1}{\Delta}\bigl(c_1 - c_0 \seckey{s}\bigr)$.
+    \item[Scale tracking] CKKS ciphertexts explicitly store the current $\Delta$: here it records fixed-point precision (unlike RLWE’s $\Delta = q/t$ embedding) and is updated after every homomorphic operation.
+  \end{description}
+  \note{“This slide revisits encryption and decryption in CKKS. The workflow is literally the same as the RLWE recipe from Section 2.5—the only twist is that CKKS prepares the plaintext by scaling it with $\Delta$ and encoding it into an integer polynomial before we ever touch the public key. Key generation samples a small-coefficient secret $\seckey{s(x)}$, random $a(x)$, and noise $e(x)$ to produce $b(x) = a(x)\seckey{s(x)} + e(x) \bmod q$. Encryption outputs $c_0 = a r$ and $c_1 = b r + \Delta \plaintext{m(x)}$ for a fresh small $r(x)$. Decryption subtracts $c_0 \seckey{s}$ from $c_1$ so the RLWE terms cancel, leaving $\Delta \plaintext{m(x)}$ plus tiny noise; dividing by the stored $\Delta$ recovers the approximate real vector. Crucially, CKKS’s $\Delta$ represents the fixed-point scale for numerical precision, whereas RLWE’s $\Delta = q/t$ simply maps a plaintext modulus into $q$. That’s why every CKKS ciphertext carries its current scale, which must be updated after additions, multiplications, and rescaling to keep precision under control.”}
 \end{frame}
 
-\begin{frame}{3.3 CKKS Homomorphic Addition}
-  \begin{itemize}
-    \item Ciphertext addition adds slots component-wise; scale and level remain unchanged.
-    \item Noise grows linearly, making addition the cheapest homomorphic primitive in CKKS.
-  \end{itemize}
-  \note{Future update: include slot diagrams and noise bounds showing $c^{(3)} = c^{(1)} + c^{(2)}$.}
+\begin{frame}{3.3 CKKS Rescaling and Scale Management}
+  \begin{description}
+    \item[Why rescale?] Ciphertexts encode scaled approximations $\plaintext{m}\cdot\Delta$. A homomorphic multiplication inflates the scale to $\Delta^2$:
+    $$
+      (\Delta \cdot m_0) \cdot (\Delta \cdot m_1) = \Delta^2 \cdot (m_0 m_1),
+    $$
+    so repeated multiplications would push the scale (and noise) out of range.
+    \item[Operation] With ciphertext $c = (c_0, c_1) \in R_Q$ at scale $\Delta$ over modulus chain $Q = q_0 q_1 \dots q_L$,
+    $$
+      c' = \operatorname{Rescale}(c) = \left\lfloor \frac{c}{q_L} \right\rceil \bmod \frac{Q}{q_L},
+    $$
+    consuming the bottom modulus.
+    \item[Effect] New parameters become
+    $$
+      \Delta' = \frac{\Delta}{q_L}, \qquad Q' = \frac{Q}{q_L},
+    $$
+    keeping the fixed-point scale within target bounds at the cost of one level.
+  \end{description}
+  \note{“Rescaling is CKKS’s way of taming the scale explosion caused by multiplication. Remember that ciphertexts store scaled approximations $\plaintext{m}\cdot\Delta$; multiplying two of them yields $(m_1 \Delta)(m_2 \Delta) = (m_1 m_2)\Delta^2$, just like fixed-point multiplication shifting the decimal twice. If we do nothing, the scale and noise blow up. The remedy is the rescale step: divide the ciphertext by the lowest modulus $q_L$ in the chain and round, producing $c' = \lfloor c / q_L \rceil \bmod (Q/q_L)$. This simultaneously reduces the modulus to $Q' = Q / q_L$ and shrinks the scale to $\Delta' = \Delta / q_L$, pulling the fixed-point representation back into the desired range. Every rescale consumes a level, so we plan circuits so there’s enough modulus budget for all future multiplications.”}
 \end{frame}
 
-\begin{frame}{3.4 CKKS Homomorphic Multiplication and Relinearization}
-  \begin{itemize}
-    \item Multiplication increases ciphertext degree and doubles the scale, requiring relinearization keys.
-    \item Relinearization shrinks the ciphertext back to two components while keeping correctness.
-  \end{itemize}
-  \note{Later content will present the tensor-product view of ciphertexts and how evaluation keys map them back to dimension two.}
+\begin{frame}{3.4 CKKS Homomorphic Addition}
+  \begin{description}
+    \item[Component-wise sum] Ciphertexts live as pairs $(c_0, c_1)$, so addition is
+    $$
+      (c_0, c_1) + (c'_0, c'_1) = (c_0 + c'_0,\; c_1 + c'_1),
+    $$
+    preserving the decrypted quantity $c_1 - c_0 \seckey{s}$ slot-wise.
+    \item[Scale alignment] Addition requires both operands to share the same stored scale $\Delta$; if not, rescale one ciphertext first (Section~3.3) to keep fixed-point alignment.
+    \item[Effect on noise] The scale remains unchanged and noise growth is negligible, so this is CKKS’s cheapest, most stable homomorphic primitive.
+  \end{description}
+  \note{“Homomorphic addition in CKKS is the simplest operation. Each ciphertext is a pair $(c_0, c_1)$, so we just add the two components: $(c_0, c_1) + (c'_0, c'_1) = (c_0 + c'_0,\; c_1 + c'_1)$. Because the decrypted value is $c_1 - c_0 s$, the slot-wise sum of plaintext approximations pops out immediately. The only caveat is that both operands must carry the same scale $\Delta$—if they differ, we rescale one ciphertext as described on slide 3.3 so the fixed-point alignment makes sense. Addition doesn’t change $\Delta$ and only nudges the noise a tiny amount, so it is extremely cheap and stable compared with homomorphic multiplication. This contrast sets up the next slide where multiplication inflates scale and ciphertext size.”}
 \end{frame}
 
-\begin{frame}{3.5 CKKS Rescaling and Scale Management}
-  \begin{itemize}
-    \item Rescale divides the ciphertext by its current scale (and modulus) to keep values within range.
-    \item Level consumption trades modulus for precision, guiding circuit depth planning.
-  \end{itemize}
-  \note{Upcoming material: equations for $\mathrm{Rescale}(c) = \lfloor c / \Delta \rfloor$, discussions on modulus chains, and examples of managing scale across layers.}
+\begin{frame}{3.5 CKKS Homomorphic Multiplication and Relinearization}
+  \begin{description}
+    \item[Multiplication result] Each ciphertext decrypts as $c_1 - c_0 \seckey{s} \approx \Delta \cdot \plaintext{m}$. Multiplying two ciphertexts therefore expands
+    $$
+      (c_1 - c_0 \seckey{s}) (c'_1 - c'_0 \seckey{s}) =
+      d_0 + d_1 \seckey{s} + d_2 \seckey{s}^2,
+    $$
+    where
+    \[
+      d_0 = c_1 c'_1,\quad
+      d_1 = -(c_1 c'_0 + c_0 c'_1),\quad
+      d_2 = c_0 c'_0.
+    \]
+    \item[Why relinearize] The appearance of the $d_2 \seckey{s}^2$ term enlarges the ciphertext (now $(d_0, d_1, d_2)$) and would require the secret key squared to decrypt, increasing storage and computation.
+    \item[Relinearization] Apply the evaluation key $\mathrm{EvalKey}(s^2)$ to fold the $d_2 \seckey{s}^2$ contribution back into the two-term format:
+    \[
+      (c_0, c_1) \times (c'_0, c'_1)
+      \xrightarrow{\text{multiply}}
+      (d_0, d_1, d_2)
+      \xrightarrow[\text{remove } d_2 (s^2)]{\text{relinearize}}
+      (e_0, e_1).
+    \]
+    \item[Reference] CKKS paper (Cheon--Kim--Kim--Song, ASIACRYPT~2017).\footnote{Cheon, Kim, Kim, Song, “Homomorphic Encryption for Arithmetic of Approximate Numbers,” ASIACRYPT 2017.}
+  \end{description}
+  \note{“Decrypting a CKKS ciphertext uses $c_1 - c_0 s \approx \Delta \cdot m$. When we multiply two ciphertexts we multiply those decrypted forms, so $(c_1 - c_0 s)(c'_1 - c'_0 s)$ expands to $d_0 + d_1 s + d_2 s^2$ with $d_0 = c_1 c'_1$, $d_1 = -(c_1 c'_0 + c_0 c'_1)$, and $d_2 = c_0 c'_0$. That third term corresponds to an $s^2$ component, so the ciphertext effectively has three pieces $(d_0, d_1, d_2)$. If we let those accumulate, ciphertext size and key-switching cost skyrocket because the secret key powers keep growing. Relinearization uses a precomputed evaluation key tied to $s^2$ to absorb $d_2$ back into the first two terms, producing a standard two-component ciphertext $(e_0, e_1)$ that decrypts with just $s$. We always relinearize immediately after multiplication before moving on to rescaling. The full construction lives in the original CKKS paper by Cheon, Kim, Kim, and Song (Asiacrypt 2017) if you want the formal treatment.”}
 \end{frame}
 
 \section{TFHE}
