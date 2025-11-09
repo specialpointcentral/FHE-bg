@@ -298,18 +298,17 @@
 \begin{frame}{4.1 TFHE Gate Operations}
   \begin{description}
     \item[Ciphertext form] Encrypt each bit $m \in \{0,1\}$ as $c = (A, c_1)$ with $c_1 = A\seckey{s} + \mu m + e$.
-    \item[NOT gate] Flip the phase to encode $1 - m$ using $(1 - m)\mu = \mu - m\mu$:
-    $$\text{NOT}(C) = \bigl(\mathbf{a},\; \mu - c_0\bigr) \bmod q,$$
-    with $\mu$ serving as the same scaling constant used earlier.
+    \item[NOT gate] Flip the phase to encode $1 - m$; equivalently $c_1' = A\seckey{s} + \mu (1 - m) + e$:
+    $$\text{NOT}(c) = \bigl(-A,\; \mu - c_1\bigr) \bmod q.$$
     \item[XOR gate] Homomorphic addition implements XOR:
-    $$\text{XOR}(C_0, C_1) = C_0 + C_1 \pmod{q}.$$
+    $$\text{XOR}(c_0, c_1) = c_0 + c_1 \pmod{q}.$$
     \item[AND challenge] Multiplicative gates inflate scale/noise since
     $$
       (m_0 \mu)(m_1 \mu) = (m_0 m_1) \mu^2,
     $$
     so TFHE uses bootstrapping to refresh ciphertexts after AND/NAND.
   \end{description}
-  \note{“This slide shows how TFHE handles Boolean gates. Each encrypted bit is an LWE-style pair $(\mathbf{a}, c_0)$ with $c_0 = \langle \mathbf{a}, s\rangle + \mu m + e$. NOT is trivial: since $(1 - m)\mu = \mu - m\mu$, we can flip the phase so $\text{NOT}(C) = (\mathbf{a}, \mu - c_0) \bmod q$. XOR is performed by ciphertext addition: $\text{XOR}(C_0, C_1) = C_0 + C_1 \pmod{q}$. The difficult gates are AND or NAND because multiplying the encoded messages triggers $(m_0 \mu)(m_1 \mu) = (m_0 m_1)\mu^2$, squaring the scale and rapidly blowing up noise. TFHE addresses this by bootstrapping immediately after such gates, which keeps the noise budget fresh and enables deep Boolean circuits.”}
+  \note{“Each TFHE ciphertext encrypts a bit $m \in \{0,1\}$ as $(A, c_1)$ with $c_1 = A s + \mu m + e$. For NOT we flip the phase: $(1 - m)\mu = \mu - m\mu$, so the refreshed component becomes $c_1' = A s + \mu (1 - m) + e$ and the ciphertext is $( -A,\; \mu - c_1 ) \bmod q$. XOR is simply ciphertext addition because the arithmetic is linear, so $\text{XOR}(c, c') = c + c' \pmod{q}$. AND and NAND are harder: multiplying ciphertexts corresponds to $(\mu m_0)(\mu m_1) = \mu^2 m_0 m_1$, which squares the scale and noise. TFHE combats that by bootstrapping right after multiplicative gates, keeping the noise budget low enough for deep Boolean circuits.”}
 \end{frame}
 
 \begin{frame}{4.2 TFHE Programmable Bootstrapping (PBS)}
