@@ -109,11 +109,11 @@
   \begin{itemize}
     \item Motivation: Learning With Errors (LWE) and Ring-LWE (RLWE) provide computationally controllable, provably secure public-key and homomorphic encryption foundations.
     \item Core idea: add random noise to hide plaintexts while preserving ring/polynomial structure for computation, reducing security to GapSVP (quantum-resistant).
-    \item LWE (vector form): samples $(A, b = A s + e \bmod q)$ where $A$ is random, $s$ secret, $e$ small noise.
-    \item RLWE (polynomial form): samples $(a(x), b(x) = a(x) s(x) + e(x) \bmod q)$ over $R_q$.
+    \item LWE (vector form): samples $(A, b = A \seckey{s} + e \bmod q)$ where $A$ is random, $\seckey{s}$ secret, $e$ small noise.
+    \item RLWE (polynomial form): samples $(a(x), b(x) = a(x) \seckey{s(x)} + e(x) \bmod q)$ over $R_q$.
     \item Transition: RLWE inherits LWE hardness while enabling structured polynomials that FHE schemes rely on.
   \end{itemize}
-  \note{Introduce why we need LWE/RLWE: they add controlled random noise to hide plaintexts while preserving the ring/polynomial structure needed for computation, with security reducible to GapSVP even against quantum adversaries. Briefly define LWE via noisy linear equations $b = As + e \pmod{q}$ and RLWE via polynomial samples $b(x) = a(x)s(x)+e(x) \pmod{q}$ inside $R_q$. Emphasize that RLWE inherits LWE hardness yet aligns with the polynomial ring container used in FHE, enabling efficient and analyzable homomorphic schemes.}
+  \note{Introduce why we need LWE/RLWE: they add controlled random noise to hide plaintexts while preserving the ring/polynomial structure needed for computation, with security reducible to GapSVP even against quantum adversaries. Briefly define LWE via noisy linear equations $b = A\seckey{s} + e \pmod{q}$ and RLWE via polynomial samples $b(x) = a(x)\seckey{s(x)}+e(x) \pmod{q}$ inside $R_q$. Emphasize that RLWE inherits LWE hardness yet aligns with the polynomial ring container used in FHE, enabling efficient and analyzable homomorphic schemes.}
 \end{frame}
 
 \begin{frame}{2.4 LWE: Key Generation, Encryption, Decryption}
@@ -183,17 +183,17 @@
     \item[Goal] Encode a real vector $(z_1, z_2, \dots, z_k)$ into the polynomial ring $R_q = \mathbb{Z}_q[x]/(x^N + 1)$ so CKKS can process it homomorphically.
     \item[Scaling] Multiply each real by a large $\Delta$ so fractional parts become big integers:
     $$
-      \widetilde{m} = \Delta \cdot m,
+      \widetilde{\plaintext{m}} = \Delta \cdot \plaintext{m},
     $$
     because all CKKS arithmetic happens modulo $q$.
     \item[Encoding] (Same SIMD trick as Section 2.2) leverage $R_q \otimes \mathbb{C} \cong \mathbb{C}^{N/2}$ to pack the scaled vector into one polynomial—each slot stores one entry, enabling parallel processing.
     \item[Decoding] After decryption, recover the integer vector and reverse the scaling:
     $$
-      m \approx \frac{1}{\Delta} \cdot \widetilde{m},
+      \plaintext{m} \approx \frac{1}{\Delta} \cdot \widetilde{\plaintext{m}},
     $$
     yielding the original reals up to a controllable approximation error.
   \end{description}
-  \note{“To let CKKS encrypt and compute on reals we first have to move them into the integer polynomial ring. Two steps make this work: scaling and encoding. We multiply each real number by a large $\Delta$, turning fractional values into big integers, because all homomorphic operations happen modulo $q$ and floats are not allowed. Then we rely on the ring decomposition $R_q \otimes \mathbb{C} \cong \mathbb{C}^{N/2}$ to map an entire vector into a single polynomial—each coefficient, or slot, holds one value, exactly like the SIMD batching we introduced earlier. This is why one CKKS ciphertext can process many numbers in parallel. During decryption we reverse the process: convert the polynomial back to its integer vector and divide by $\Delta$ to get an approximation of the original reals. Hence CKKS is an approximate FHE scheme with controllable precision error.”}
+  \note{“To let CKKS encrypt and compute on reals we first have to move them into the integer polynomial ring. Two steps make this work: scaling and encoding. We multiply each real number by a large $\Delta$, turning fractional values into big integers, because all homomorphic operations happen modulo $q$ and floats are not allowed. Then we rely on the ring decomposition $R_q \otimes \mathbb{C} \cong \mathbb{C}^{N/2}$ to map an entire vector into a single polynomial—each coefficient, or slot, holds one value, exactly like the SIMD batching we introduced earlier. This is why one CKKS ciphertext can process many numbers in parallel. During decryption we reverse the process: convert the polynomial back to its integer vector and divide by $\Delta$ to get an approximation of the original $\plaintext{m}$. Hence CKKS is an approximate FHE scheme with controllable precision error.”}
 \end{frame}
 
 \begin{frame}{3.2 CKKS Encryption and Decryption}
@@ -292,28 +292,28 @@
     \item[Bootstrapping] Every gate invocation bootstraps away noise, allowing arbitrarily deep Boolean circuits with stable precision.
     \item[Contrast to CKKS] CKKS excels at numeric workloads but struggles with exact branching or comparisons; TFHE provides the complementary bit-level toolkit.
   \end{description}
-  \note{“Now we pivot to TFHE, which follows a completely different computation model from CKKS. CKKS encrypts approximate real vectors, whereas TFHE encrypts individual bits—each one is a TLWE/LWE sample. The scheme’s core idea is to evaluate Boolean gates such as AND, XOR, and NOT directly on ciphertexts, making it the go-to option for comparisons, conditional checks, verification protocols, and encrypted code execution. CKKS is ill-suited for these bit-level tasks. TFHE reuses the LWE-style key generation and encryption workflow; for intuition we can set $r = \mathbf{1}$ so the ciphertext looks like $(c_0, c_1) = (A, A \seckey{s} + \mu m + e)$ just like in Section 2.4, with $m \in \{0,1\}$ and $\mu$ playing the role of the earlier scaling factor $\Delta$. The killer feature is bootstrapping: every gate refreshes the noise budget, so we can evaluate arbitrarily deep logic circuits without the noise blow-up that plagues other schemes. While CKKS also has bootstrapping variants, their noise-refresh performance lags far behind TFHE’s per-gate bootstrap. This bit-level capability fills the gap left by CKKS’s numeric focus.”}
+  \note{“Now we pivot to TFHE, which follows a completely different computation model from CKKS. CKKS encrypts approximate real vectors, whereas TFHE encrypts individual bits—each one is a TLWE/LWE sample. The scheme’s core idea is to evaluate Boolean gates such as AND, XOR, and NOT directly on ciphertexts, making it the go-to option for comparisons, conditional checks, verification protocols, and encrypted code execution. CKKS is ill-suited for these bit-level tasks. TFHE reuses the LWE-style key generation and encryption workflow; for intuition we can set $r = \mathbf{1}$ so the ciphertext looks like $(c_0, c_1) = (A, A \seckey{s} + \mu \plaintext{m} + e)$ just like in Section 2.4, with $\plaintext{m} \in \{0,1\}$ and $\mu$ playing the role of the earlier scaling factor $\Delta$. The killer feature is bootstrapping: every gate refreshes the noise budget, so we can evaluate arbitrarily deep logic circuits without the noise blow-up that plagues other schemes. While CKKS also has bootstrapping variants, their noise-refresh performance lags far behind TFHE’s per-gate bootstrap. This bit-level capability fills the gap left by CKKS’s numeric focus.”}
 \end{frame}
 
 \begin{frame}{4.1 TFHE Gate Operations}
   \begin{description}
-    \item[Ciphertext form] Encrypt each bit $m \in \{0,1\}$ as $c = (A, c_1)$ with $c_1 = A\seckey{s} + \mu m + e$.
-    \item[NOT gate] Flip the phase to encode $1 - m$; equivalently $c_1' = A\seckey{s} + \mu (1 - m) + e$:
+    \item[Ciphertext form] Encrypt each bit $\plaintext{m} \in \{0,1\}$ as $c = (A, c_1)$ with $c_1 = A\seckey{s} + \mu \plaintext{m} + e$.
+    \item[NOT gate] Flip the phase to encode $1 - \plaintext{m}$; equivalently $c_1' = A\seckey{s} + \mu (1 - \plaintext{m}) + e$:
     $$\text{NOT}(c) = \bigl(-A,\; \mu - c_1\bigr) \bmod q.$$
     \item[XOR gate] Homomorphic addition implements XOR:
     $$\text{XOR}(c_0, c_1) = c_0 + c_1 \pmod{q}.$$
     \item[AND challenge] Multiplicative gates inflate scale/noise since
     $$
-      (m_0 \mu)(m_1 \mu) = (m_0 m_1) \mu^2,
+      (\plaintext{m}_0 \mu)(\plaintext{m}_1 \mu) = (\plaintext{m}_0 \plaintext{m}_1) \mu^2,
     $$
     so TFHE uses bootstrapping to refresh ciphertexts after AND/NAND.
   \end{description}
-  \note{“Each TFHE ciphertext encrypts a bit $m \in \{0,1\}$ as $(A, c_1)$ with $c_1 = A s + \mu m + e$. For NOT we flip the phase: $(1 - m)\mu = \mu - m\mu$, so the refreshed component becomes $c_1' = A s + \mu (1 - m) + e$ and the ciphertext is $( -A,\; \mu - c_1 ) \bmod q$. XOR is simply ciphertext addition because the arithmetic is linear, so $\text{XOR}(c, c') = c + c' \pmod{q}$. AND and NAND are harder: multiplying ciphertexts corresponds to $(\mu m_0)(\mu m_1) = \mu^2 m_0 m_1$, which squares the scale and noise. TFHE combats that by bootstrapping right after multiplicative gates, keeping the noise budget low enough for deep Boolean circuits.”}
+  \note{“Each TFHE ciphertext encrypts a bit $\plaintext{m} \in \{0,1\}$ as $(A, c_1)$ with $c_1 = A s + \mu \plaintext{m} + e$. For NOT we flip the phase: $(1 - \plaintext{m})\mu = \mu - \plaintext{m}\mu$, so the refreshed component becomes $c_1' = A s + \mu (1 - \plaintext{m}) + e$ and the ciphertext is $( -A,\; \mu - c_1 ) \bmod q$. XOR is simply ciphertext addition because the arithmetic is linear, so $\text{XOR}(c, c') = c + c' \pmod{q}$. AND and NAND are harder: multiplying ciphertexts corresponds to $(\mu \plaintext{m}_0)(\mu \plaintext{m}_1) = \mu^2 \plaintext{m}_0 \plaintext{m}_1$, which squares the scale and noise. TFHE combats that by bootstrapping right after multiplicative gates, keeping the noise budget low enough for deep Boolean circuits.”}
 \end{frame}
 
 \begin{frame}{4.2 TFHE Programmable Bootstrapping (PBS)}
   \begin{description}
-    \item[Phase encoding] Each ciphertext hides a phase $\phi \approx \mu m$ (with $\mu \approx q/4$): $\phi \approx 0$ encodes $m=0$, $\phi \approx \mu$ encodes $m=1$.
+    \item[Phase encoding] Each ciphertext hides a phase $\phi \approx \mu \plaintext{m}$ (with $\mu \approx q/4$): $\phi \approx 0$ encodes $\plaintext{m}=0$, $\phi \approx \mu$ encodes $\plaintext{m}=1$.
     \item[Bootstrapping goal] Extract the phase homomorphically, evaluate a function on it, and re-encode a fresh low-noise ciphertext without decrypting.
     \item[PBS view] Treat bootstrapping as Decode $\rightarrow$ Evaluate $\rightarrow$ Re-encrypt inside the ciphertext, guided by a bootstrapping key.
   \end{description}
