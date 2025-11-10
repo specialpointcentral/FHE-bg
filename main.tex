@@ -18,7 +18,7 @@
 
 \title{Background of Fully Homomorphic Encryption}
 \subtitle{CKKS and TFHE}
-\author{HU Qi\\PhD Student in HKU}
+\author{HU Qi}
 \institute{The University of Hong Kong}
 \date{\today}
 
@@ -312,11 +312,58 @@
 \end{frame}
 
 \begin{frame}{4.2 TFHE Programmable Bootstrapping (PBS)}
-  \begin{itemize}
-    \item Outline how PBS refreshes noise while applying an arbitrary function encoded as a lookup table.
-    \item Note typical use cases: non-linear activations, comparison operators, and logic gates.
-  \end{itemize}
-  \note{Will later include step-by-step PBS equations, bootstrapping key structure, and runtime considerations.}
+  \begin{description}
+    \item[Phase encoding] Each ciphertext hides a phase $\phi \approx \mu m$ (with $\mu \approx q/4$): $\phi \approx 0$ encodes $m=0$, $\phi \approx \mu$ encodes $m=1$.
+    \item[Bootstrapping goal] Extract the phase homomorphically, evaluate a function on it, and re-encode a fresh low-noise ciphertext without decrypting.
+    \item[PBS view] Treat bootstrapping as Decode $\rightarrow$ Evaluate $\rightarrow$ Re-encrypt inside the ciphertext, guided by a bootstrapping key.
+  \end{description}
+  \note{“PBS starts from the phase representation: TLWE ciphertexts encode a phase near either $0$ or $\mu$ depending on the bit. The goal is to extract that phase homomorphically, evaluate the desired Boolean function, and re-encrypt a fresh ciphertext so evaluation can continue. Conceptually it’s a decode–evaluate–re-encrypt pipeline running entirely under encryption.”}
+\end{frame}
+
+\begin{frame}{4.2 TFHE Programmable Bootstrapping (PBS)}
+  \begin{description}
+    \item[Phase reconstruction] Begin with $\phi = c_1 - A\seckey{s}$; instead of exposing \seckey{s}, compute
+    $$
+      \Enc(\phi) = \Enc(c_1 - A\seckey{s}).
+    $$
+    \item[Need for $\Enc(A\seckey{s})$] Since $A\seckey{s} = \sum_{i=1}^n a_i s_i$,
+    $$
+      \sum_{i=1}^{n} a_i \cdot \Enc_{\mathrm{GLWE}}(s_i)
+      = \Enc\!\left(\sum_{i=1}^n a_i s_i\right)
+      = \Enc(A\seckey{s}),
+    $$
+    enabling phase recovery without revealing \seckey{s}.
+    \item[Bootstrapping key] Publish the GLWE encryptions of the secret coefficients:
+    $$
+      \mathrm{BK} = \{\Enc_{\mathrm{GLWE}}(s_1), \ldots, \Enc_{\mathrm{GLWE}}(s_n)\},
+    $$
+    so PBS has the encrypted ingredients needed to refresh ciphertexts safely.
+  \end{description}
+  \note{“The first PBS step is phase reconstruction. We’d like $\phi = c_1 - A\seckey{s}$, but naively subtracting $A\seckey{s}$ would reveal the secret key. Instead we work with $\Enc(\phi) = \Enc(c_1 - A\seckey{s})$, which means we only need $\Enc(A\seckey{s})$. Because $A\seckey{s} = \sum_i a_i s_i$, we can publish GLWE encryptions of each secret coefficient and homomorphically sum $\sum_i a_i \Enc_{\mathrm{GLWE}}(s_i) = \Enc(A\seckey{s})$. This collection is the bootstrapping key, letting PBS ‘decrypt itself’ just enough to refresh the ciphertext while keeping \seckey{s} hidden.”}
+\end{frame}
+
+\begin{frame}{4.2 TFHE Programmable Bootstrapping (PBS)}
+  \begin{description}
+    \item[Encrypted phase] Using the previous step we carry forward $\Enc(\phi) = \Enc(c_1 - A\seckey{s})$.
+    \item[Programmable goal] Map $\phi$ through $f$ so $\Enc(\phi) \rightarrow \Enc(f(b))$.
+    \item[Gadget decomposition] Produce weights via
+    $$
+      \mathrm{GadgetDecomp}\bigl(c = \Enc(\phi)\bigr) = (w_0, w_1, \dots, w_k),
+    $$
+    which form the encrypted selection signals.
+    \item[LUT for $f$] Store encrypted outputs
+    $$
+      \mathrm{LUT}_f = (\Enc(f(0)),\; \Enc(f(1))),
+    $$
+    generalized to higher arity as needed.
+    \item[External product] Combine weights and LUT to obtain the refreshed ciphertext:
+    $$
+      \Enc(f(b)) = \mathrm{LUT}_f \bigstar (w_0, \dots, w_k)
+      = \sum_{i=0}^{k} w_i \cdot \mathrm{LUT}_f^{(i)}.
+    $$
+    Here each $w_i$ acts as an encrypted selection weight and $\mathrm{LUT}_f^{(i)}$ stores the encrypted function value.
+  \end{description}
+  \note{“Once we hold $\Enc(\phi) = \Enc(c_1 - A s)$, PBS evaluates the requested Boolean function via a programmable LUT. Run gadget decomposition to obtain $(w_0, \ldots, w_k)$, keep the encrypted outputs $\mathrm{LUT}_f$, and compute the external product $\mathrm{LUT}_f \bigstar (w_0, \ldots, w_k) = \sum_i w_i \cdot \mathrm{LUT}_f^{(i)}$. The $w_i$ are encrypted selection weights while $\mathrm{LUT}_f^{(i)}$ stores the encrypted function value. This finishes the ciphertext transformation: because we can prebuild $\mathrm{LUT}_f$ for any Boolean function, PBS is truly “programmable bootstrapping.”}
 \end{frame}
 
 \end{document}
