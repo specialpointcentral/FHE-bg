@@ -1,0 +1,53 @@
+name: Compile LaTeX and Release
+
+on:
+  push:
+    branches:
+      - main
+    tags:
+      - 'v*'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+    
+    - name: Install LaTeX
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y texlive-latex-base texlive-latex-extra texlive-fonts-recommended texlive-fonts-extra
+    
+    - name: Compile LaTeX document
+      run: make
+    
+    - name: Upload PDF artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: FHE-background-slides
+        path: main.pdf
+        retention-days: 90
+    
+    - name: Create Release
+      if: startsWith(github.ref, 'refs/tags/')
+      uses: softprops/action-gh-release@v1
+      with:
+        files: main.pdf
+        body: |
+          ## Background of Fully Homomorphic Encryption
+          
+          This release contains the compiled PDF slides for the FHE background presentation (CKKS and TFHE).
+          
+          **Content:** Fully Homomorphic Encryption concepts and implementations
+          **Author:** HU Qi
+          **Institution:** The University of Hong Kong
+        draft: false
+        prerelease: false
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
